@@ -1,116 +1,89 @@
-# Structure of this project
+# poker
 
-This project is structured pretty similarly to how a regular Solana Anchor project is structured. The main difference lies in there being two places to write code here:
+This is a Next.js app containing:
 
-- The `programs` dir like usual Anchor programs
-- The `encrypted-ixs` dir for confidential computing instructions
+- Tailwind and Shadcn UI for styling
+- [Gill](https://gill.site/) Solana SDK
+- Shadcn [Wallet UI](https://registry.wallet-ui.dev) components
+- A basic Counter Solana program written in Anchor
+- [codama](https://github.com/codama-idl/codama) to generate a JS sdk for the program
+- UI components for interacting with the program
 
-When working with plaintext data, we can edit it inside our program as normal. When working with confidential data though, state transitions take place off-chain using the Arcium network as a co-processor. For this, we then always need two instructions in our program: one that gets called to initialize a confidential computation, and one that gets called when the computation is done and supplies the resulting data. Additionally, since the types and operations in a Solana program and in a confidential computing environment are a bit different, we define the operations themselves in the `encrypted-ixs` dir using our Rust-based framework called Arcis. To link all of this together, we provide a few macros that take care of ensuring the correct accounts and data are passed for the specific initialization and callback functions:
+## Getting Started
 
-```rust
-// encrypted-ixs/add_together.rs
+### Installation
 
-use arcis_imports::*;
+#### Download the template
 
-#[encrypted]
-mod circuits {
-    use arcis_imports::*;
+```shell
+npx create-solana-dapp@latest -t gh:solana-foundation/templates/gill/poker
+```
 
-    pub struct InputValues {
-        v1: u8,
-        v2: u8,
-    }
+#### Install Dependencies
 
-    #[instruction]
-    pub fn add_together(input_ctxt: Enc<Shared, InputValues>) -> Enc<Shared, u16> {
-        let input = input_ctxt.to_arcis();
-        let sum = input.v1 as u16 + input.v2 as u16;
-        input_ctxt.owner.from_arcis(sum)
-    }
-}
+```shell
+npm install
+```
 
-// programs/my_program/src/lib.rs
+## Apps
 
-use anchor_lang::prelude::*;
-use arcium_anchor::prelude::*;
+### anchor
 
-declare_id!("<some ID>");
+This is a Solana program written in Rust using the Anchor framework.
 
-#[arcium_program]
-pub mod my_program {
-    use super::*;
+#### Commands
 
-    pub fn init_add_together_comp_def(ctx: Context<InitAddTogetherCompDef>) -> Result<()> {
-        init_comp_def(ctx.accounts, true, 0, None, None)?;
-        Ok(())
-    }
+You can use any normal anchor commands. Either move to the `anchor` directory and run the `anchor` command or prefix the
+command with `npm`, eg: `npm run anchor`.
 
-    pub fn add_together(
-        ctx: Context<AddTogether>,
-        computation_offset: u64,
-        ciphertext_0: [u8; 32],
-        ciphertext_1: [u8; 32],
-        pub_key: [u8; 32],
-        nonce: u128,
-    ) -> Result<()> {
-        let args = vec![
-            Argument::ArcisPubkey(pub_key),
-            Argument::PlaintextU128(nonce),
-            Argument::EncryptedU8(ciphertext_0),
-            Argument::EncryptedU8(ciphertext_1),
-        ];
-        ctx.accounts.sign_pda_account.bump = ctx.bumps.sign_pda_account;
-        queue_computation(
-            ctx.accounts,
-            computation_offset,
-            args,
-            None,
-            vec![AddTogetherCallback::callback_ix(&[])],
-        )?;
-        Ok(())
-    }
+#### Sync the program id:
 
-    #[arcium_callback(encrypted_ix = "add_together")]
-    pub fn add_together_callback(
-        ctx: Context<AddTogetherCallback>,
-        output: ComputationOutputs<AddTogetherOutput>,
-    ) -> Result<()> {
-        let o = match output {
-            ComputationOutputs::Success(AddTogetherOutput { field_0: o }) => o,
-            _ => return Err(ErrorCode::AbortedComputation.into()),
-        };
+Running this command will create a new keypair in the `anchor/target/deploy` directory and save the address to the
+Anchor config file and update the `declare_id!` macro in the `./src/lib.rs` file of the program. This will also update
+the constant in the `anchor/src/counter-exports.ts` file.
 
-        emit!(SumEvent {
-            sum: o.ciphertexts[0],
-            nonce: o.nonce.to_le_bytes(),
-        });
-        Ok(())
-    }
-}
+```shell
+npm run setup
+```
 
-#[queue_computation_accounts("add_together", payer)]
-#[derive(Accounts)]
-#[instruction(computation_offset: u64)]
-pub struct AddTogether<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    // ... other required accounts
-}
+#### Build the program:
 
-#[callback_accounts("add_together", payer)]
-#[derive(Accounts)]
-pub struct AddTogetherCallback<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    // ... other required accounts
-    pub some_extra_acc: AccountInfo<'info>,
-}
+```shell
+npm run anchor-build
+```
 
-#[init_computation_definition_accounts("add_together", payer)]
-#[derive(Accounts)]
-pub struct InitAddTogetherCompDef<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    // ... other required accounts
-}
+#### Start the test validator with the program deployed:
+
+```shell
+npm run anchor-localnet
+```
+
+#### Run the tests
+
+```shell
+npm run anchor-test
+```
+
+#### Deploy to Devnet
+
+```shell
+npm run anchor deploy --provider.cluster devnet
+```
+
+### web
+
+This is a React app that uses the Anchor generated client to interact with the Solana program.
+
+#### Commands
+
+Start the app
+
+```shell
+npm run dev
+```
+
+Build the app
+
+```shell
+npm run build
 ```
