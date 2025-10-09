@@ -1,0 +1,880 @@
+{
+  "address": "Ev6eGkLNZQjgXekHWY1UMb1qkTVUzWsX1ziqcixqsieV",
+  "metadata": {
+    "name": "poker",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "advance_street",
+      "discriminator": [
+        32,
+        130,
+        217,
+        150,
+        106,
+        172,
+        250,
+        30
+      ],
+      "accounts": [
+        {
+          "name": "table",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "end_hand",
+      "discriminator": [
+        252,
+        75,
+        51,
+        58,
+        72,
+        237,
+        183,
+        58
+      ],
+      "accounts": [
+        {
+          "name": "table",
+          "writable": true
+        },
+        {
+          "name": "winner_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "table"
+              },
+              {
+                "kind": "account",
+                "path": "winner_state.player",
+                "account": "PlayerState"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "winner_position",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "initialize_table",
+      "discriminator": [
+        223,
+        143,
+        246,
+        102,
+        122,
+        200,
+        108,
+        147
+      ],
+      "accounts": [
+        {
+          "name": "table",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  98,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "table_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "table_id",
+          "type": "u64"
+        },
+        {
+          "name": "small_blind",
+          "type": "u64"
+        },
+        {
+          "name": "big_blind",
+          "type": "u64"
+        },
+        {
+          "name": "min_buy_in",
+          "type": "u64"
+        },
+        {
+          "name": "max_buy_in",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "join_table",
+      "discriminator": [
+        14,
+        117,
+        84,
+        51,
+        95,
+        146,
+        171,
+        70
+      ],
+      "accounts": [
+        {
+          "name": "table",
+          "writable": true
+        },
+        {
+          "name": "player_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "table"
+              },
+              {
+                "kind": "account",
+                "path": "player"
+              }
+            ]
+          }
+        },
+        {
+          "name": "player",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "buy_in_amount",
+          "type": "u64"
+        },
+        {
+          "name": "position",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "leave_table",
+      "discriminator": [
+        163,
+        153,
+        94,
+        194,
+        19,
+        106,
+        113,
+        32
+      ],
+      "accounts": [
+        {
+          "name": "table",
+          "writable": true
+        },
+        {
+          "name": "player_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "table"
+              },
+              {
+                "kind": "account",
+                "path": "player"
+              }
+            ]
+          }
+        },
+        {
+          "name": "player",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "player_action",
+      "discriminator": [
+        37,
+        85,
+        25,
+        135,
+        200,
+        116,
+        96,
+        101
+      ],
+      "accounts": [
+        {
+          "name": "table",
+          "writable": true
+        },
+        {
+          "name": "player_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "table"
+              },
+              {
+                "kind": "account",
+                "path": "player"
+              }
+            ]
+          }
+        },
+        {
+          "name": "player",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "action",
+          "type": {
+            "defined": {
+              "name": "PlayerActionType"
+            }
+          }
+        },
+        {
+          "name": "raise_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "post_blinds",
+      "discriminator": [
+        61,
+        32,
+        219,
+        77,
+        94,
+        8,
+        6,
+        152
+      ],
+      "accounts": [
+        {
+          "name": "table",
+          "writable": true
+        },
+        {
+          "name": "player_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "table"
+              },
+              {
+                "kind": "account",
+                "path": "player"
+              }
+            ]
+          }
+        },
+        {
+          "name": "player",
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "start_hand",
+      "discriminator": [
+        50,
+        173,
+        164,
+        52,
+        65,
+        42,
+        197,
+        135
+      ],
+      "accounts": [
+        {
+          "name": "table",
+          "writable": true
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "PlayerState",
+      "discriminator": [
+        56,
+        3,
+        60,
+        86,
+        174,
+        16,
+        244,
+        195
+      ]
+    },
+    {
+      "name": "PokerTable",
+      "discriminator": [
+        128,
+        243,
+        17,
+        3,
+        215,
+        50,
+        15,
+        15
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "HandComplete",
+      "discriminator": [
+        192,
+        45,
+        57,
+        14,
+        165,
+        90,
+        229,
+        178
+      ]
+    },
+    {
+      "name": "HandStarted",
+      "discriminator": [
+        92,
+        115,
+        135,
+        103,
+        133,
+        169,
+        143,
+        43
+      ]
+    },
+    {
+      "name": "PlayerActioned",
+      "discriminator": [
+        130,
+        135,
+        225,
+        93,
+        234,
+        116,
+        205,
+        27
+      ]
+    },
+    {
+      "name": "PlayerJoined",
+      "discriminator": [
+        39,
+        144,
+        49,
+        106,
+        108,
+        210,
+        183,
+        38
+      ]
+    },
+    {
+      "name": "TableCreated",
+      "discriminator": [
+        164,
+        233,
+        12,
+        97,
+        250,
+        213,
+        187,
+        147
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "TableFull",
+      "msg": "Table is full"
+    },
+    {
+      "code": 6001,
+      "name": "GameInProgress",
+      "msg": "Game is already in progress"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidBuyIn",
+      "msg": "Invalid buy-in amount"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidPosition",
+      "msg": "Invalid position"
+    },
+    {
+      "code": 6004,
+      "name": "SeatTaken",
+      "msg": "Seat is already taken"
+    },
+    {
+      "code": 6005,
+      "name": "NotAtTable",
+      "msg": "Player is not at table"
+    },
+    {
+      "code": 6006,
+      "name": "CannotLeaveNow",
+      "msg": "Cannot leave table during active hand"
+    },
+    {
+      "code": 6007,
+      "name": "NotEnoughPlayers",
+      "msg": "Not enough players to start"
+    },
+    {
+      "code": 6008,
+      "name": "WrongGameState",
+      "msg": "Wrong game state"
+    },
+    {
+      "code": 6009,
+      "name": "NotBlindPosition",
+      "msg": "Not in blind position"
+    },
+    {
+      "code": 6010,
+      "name": "InsufficientFunds",
+      "msg": "Insufficient funds"
+    },
+    {
+      "code": 6011,
+      "name": "PlayerNotActive",
+      "msg": "Player is not active"
+    },
+    {
+      "code": 6012,
+      "name": "NotYourTurn",
+      "msg": "Not your turn"
+    },
+    {
+      "code": 6013,
+      "name": "CannotCheck",
+      "msg": "Cannot check - must call or raise"
+    },
+    {
+      "code": 6014,
+      "name": "RaiseTooSmall",
+      "msg": "Raise amount is too small"
+    },
+    {
+      "code": 6015,
+      "name": "InvalidWinner",
+      "msg": "Invalid winner"
+    }
+  ],
+  "types": [
+    {
+      "name": "GameState",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "WaitingForPlayers"
+          },
+          {
+            "name": "PreFlop"
+          },
+          {
+            "name": "Flop"
+          },
+          {
+            "name": "Turn"
+          },
+          {
+            "name": "River"
+          },
+          {
+            "name": "Showdown"
+          },
+          {
+            "name": "HandComplete"
+          }
+        ]
+      }
+    },
+    {
+      "name": "HandComplete",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "table",
+            "type": "pubkey"
+          },
+          {
+            "name": "winner",
+            "type": "pubkey"
+          },
+          {
+            "name": "pot",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "HandStarted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "table",
+            "type": "pubkey"
+          },
+          {
+            "name": "hand_number",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PlayerActionType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Fold"
+          },
+          {
+            "name": "Check"
+          },
+          {
+            "name": "Call"
+          },
+          {
+            "name": "Raise"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PlayerActioned",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "player",
+            "type": "pubkey"
+          },
+          {
+            "name": "action",
+            "type": {
+              "defined": {
+                "name": "PlayerActionType"
+              }
+            }
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PlayerJoined",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "table",
+            "type": "pubkey"
+          },
+          {
+            "name": "player",
+            "type": "pubkey"
+          },
+          {
+            "name": "position",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PlayerState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "player",
+            "type": "pubkey"
+          },
+          {
+            "name": "table",
+            "type": "pubkey"
+          },
+          {
+            "name": "stack",
+            "type": "u64"
+          },
+          {
+            "name": "current_bet",
+            "type": "u64"
+          },
+          {
+            "name": "position",
+            "type": "u8"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "PlayerStatus"
+              }
+            }
+          },
+          {
+            "name": "hole_cards_computation",
+            "type": "pubkey"
+          },
+          {
+            "name": "has_acted_this_street",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PlayerStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Active"
+          },
+          {
+            "name": "Folded"
+          },
+          {
+            "name": "AllIn"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PokerTable",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "table_id",
+            "type": "u64"
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "player_count",
+            "type": "u8"
+          },
+          {
+            "name": "players",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "button_position",
+            "type": "u8"
+          },
+          {
+            "name": "current_player_index",
+            "type": "u8"
+          },
+          {
+            "name": "pot",
+            "type": "u64"
+          },
+          {
+            "name": "current_bet",
+            "type": "u64"
+          },
+          {
+            "name": "game_state",
+            "type": {
+              "defined": {
+                "name": "GameState"
+              }
+            }
+          },
+          {
+            "name": "small_blind",
+            "type": "u64"
+          },
+          {
+            "name": "big_blind",
+            "type": "u64"
+          },
+          {
+            "name": "min_buy_in",
+            "type": "u64"
+          },
+          {
+            "name": "max_buy_in",
+            "type": "u64"
+          },
+          {
+            "name": "hand_number",
+            "type": "u64"
+          },
+          {
+            "name": "deck_computation",
+            "type": "pubkey"
+          },
+          {
+            "name": "community_cards",
+            "type": {
+              "array": [
+                "u8",
+                5
+              ]
+            }
+          },
+          {
+            "name": "street_bet_count",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TableCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "table_id",
+            "type": "u64"
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          }
+        ]
+      }
+    }
+  ]
+}
