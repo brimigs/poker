@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/poker.json`.
  */
 export type Poker = {
-  "address": "Enihiu6yscwrmgi3Ew3JFoPqTFqW7E1eJdE2hmBvMkkN",
+  "address": "Ev6eGkLNZQjgXekHWY1UMb1qkTVUzWsX1ziqcixqsieV",
   "metadata": {
     "name": "poker",
     "version": "0.1.0",
@@ -24,6 +24,46 @@ export type Poker = {
         172,
         250,
         30
+      ],
+      "accounts": [
+        {
+          "name": "table",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "advanceStreetAuto",
+      "discriminator": [
+        225,
+        118,
+        69,
+        186,
+        174,
+        191,
+        105,
+        148
+      ],
+      "accounts": [
+        {
+          "name": "table",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "checkAutoWin",
+      "discriminator": [
+        183,
+        160,
+        255,
+        22,
+        154,
+        24,
+        185,
+        184
       ],
       "accounts": [
         {
@@ -582,6 +622,21 @@ export type Poker = {
       "code": 6015,
       "name": "invalidWinner",
       "msg": "Invalid winner"
+    },
+    {
+      "code": 6016,
+      "name": "noActivePlayersRemaining",
+      "msg": "No active players remaining"
+    },
+    {
+      "code": 6017,
+      "name": "alreadyPostedBlind",
+      "msg": "Player has already posted blind this hand"
+    },
+    {
+      "code": 6018,
+      "name": "bettingRoundNotComplete",
+      "msg": "Betting round is not complete"
     }
   ],
   "types": [
@@ -861,6 +916,18 @@ export type Poker = {
           },
           {
             "name": "streetBetCount",
+            "type": "u8"
+          },
+          {
+            "name": "blindsPosted",
+            "type": "u16"
+          },
+          {
+            "name": "lastRaiseAmount",
+            "type": "u64"
+          },
+          {
+            "name": "lastAggressorIndex",
             "type": "u8"
           }
         ]

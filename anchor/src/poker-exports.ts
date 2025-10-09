@@ -22,7 +22,7 @@ export function getPokerProgramId(cluster: Cluster) {
     case 'testnet':
       // This is the program ID for the Poker program on devnet and testnet.
       // Update this if you deploy to devnet/testnet
-      return new PublicKey('Enihiu6yscwrmgi3Ew3JFoPqTFqW7E1eJdE2hmBvMkkN')
+      return new PublicKey('Ev6eGkLNZQjgXekHWY1UMb1qkTVUzWsX1ziqcixqsieV')
     case 'mainnet-beta':
     default:
       return POKER_PROGRAM_ID

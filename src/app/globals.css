@@ -125,6 +125,95 @@
   }
 }
 
+/* Poker Theme Styles */
+@layer components {
+  .poker-felt {
+    background: linear-gradient(135deg, #1a5f3f 0%, #0d4228 100%);
+    position: relative;
+  }
+
+  .poker-felt::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 50%, rgba(255,255,255,0.03) 0%, transparent 50%),
+      radial-gradient(circle at 80% 50%, rgba(255,255,255,0.03) 0%, transparent 50%);
+  }
+
+  .poker-felt-blue {
+    background: linear-gradient(135deg, #1a3a5f 0%, #0d1f42 100%);
+  }
+
+  .poker-felt-red {
+    background: linear-gradient(135deg, #5f1a1a 0%, #420d0d 100%);
+  }
+
+  .chip-stack {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .chip-icon {
+    display: inline-block;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    position: relative;
+  }
+
+  .chip-icon::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    border: 1px dashed currentColor;
+    opacity: 0.6;
+  }
+
+  .stake-badge-micro {
+    @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+  }
+
+  .stake-badge-low {
+    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200;
+  }
+
+  .stake-badge-high {
+    @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+  }
+
+  .poker-card-suit {
+    font-size: 1.5rem;
+    opacity: 0.1;
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .seat-selector {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 1;
+    margin: 0 auto;
+  }
+
+  .seat-button {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+
+  .seat-button:hover:not(:disabled) {
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
 .wallet-adapter-button-trigger {
   height: auto !important;
   @apply !border !bg-background !shadow-xs hover:!bg-accent !text-accent-foreground hover:!text-accent-foreground dark:!bg-input/30 !border-input/10 dark:!border-input dark:hover:!bg-input/50;

@@ -1,12 +1,138 @@
 use anchor_lang::prelude::*;
 
-declare_id!("Enihiu6yscwrmgi3Ew3JFoPqTFqW7E1eJdE2hmBvMkkN");
+declare_id!("Ev6eGkLNZQjgXekHWY1UMb1qkTVUzWsX1ziqcixqsieV");
 
 pub const MAX_PLAYERS: usize = 9;
 pub const SMALL_BLIND_DEFAULT: u64 = 10;
 pub const BIG_BLIND_DEFAULT: u64 = 20;
 pub const MIN_BUY_IN_DEFAULT: u64 = 1000;
 pub const MAX_BUY_IN_DEFAULT: u64 = 10000;
+
+// Helper function to find next active player using remaining_accounts
+fn find_next_active_player<'info>(
+    table_key: &Pubkey,
+    table: &PokerTable,
+    current_index: u8,
+    player_state_accounts: &[AccountInfo<'info>],
+) -> Result<u8> {
+    let mut next = (current_index + 1) % MAX_PLAYERS as u8;
+    let mut checked = 0;
+
+    while checked < MAX_PLAYERS {
+        // Skip empty seats
+        if table.players[next as usize] == Pubkey::default() {
+            next = (next + 1) % MAX_PLAYERS as u8;
+            checked += 1;
+            continue;
+        }
+
+        // Get player pubkey at this position
+        let player_pubkey = table.players[next as usize];
+
+        // Derive expected PDA for this player
+        let (expected_pda, _) = Pubkey::find_program_address(
+            &[b"player", table_key.as_ref(), player_pubkey.as_ref()],
+            &crate::ID,
+        );
+
+        // Try to find this account in remaining_accounts
+        for account_info in player_state_accounts {
+            if account_info.key == &expected_pda {
+                // Try to deserialize the player state
+                let data = account_info.try_borrow_data()?;
+                let player_state = PlayerState::try_deserialize(&mut &data[..])?;
+
+                // Check if player can act (is active, not folded/all-in)
+                if player_state.status == PlayerStatus::Active {
+                    return Ok(next);
+                }
+                break;
+            }
+        }
+
+        next = (next + 1) % MAX_PLAYERS as u8;
+        checked += 1;
+    }
+
+    Err(PokerError::NoActivePlayersRemaining.into())
+}
+
+// Helper to check if betting round is complete
+fn is_betting_round_complete<'info>(
+    table: &PokerTable,
+    player_state_accounts: &[AccountInfo<'info>],
+) -> Result<bool> {
+    let mut active_players = Vec::new();
+
+    // Collect all active/all-in players from remaining_accounts
+    for account_info in player_state_accounts {
+        let data = account_info.try_borrow_data()?;
+        let player_state = PlayerState::try_deserialize(&mut &data[..])?;
+
+        match player_state.status {
+            PlayerStatus::Active | PlayerStatus::AllIn => {
+                active_players.push(player_state);
+            }
+            PlayerStatus::Folded => continue,
+        }
+    }
+
+    if active_players.is_empty() {
+        return Ok(true);
+    }
+
+    // Check all active players have acted
+    for player_state in &active_players {
+        if player_state.status == PlayerStatus::Active
+            && !player_state.has_acted_this_street {
+            return Ok(false);
+        }
+    }
+
+    // Check all active players match current bet (or all-in)
+    for player_state in &active_players {
+        if player_state.status == PlayerStatus::Active
+            && player_state.current_bet != table.current_bet {
+            return Ok(false);
+        }
+    }
+
+    Ok(true)
+}
+
+// Helper to reset player states for new street
+fn reset_player_states_for_street<'info>(
+    player_state_accounts: &[AccountInfo<'info>],
+) -> Result<()> {
+    for account_info in player_state_accounts {
+        let mut data = account_info.try_borrow_mut_data()?;
+        let mut player_state = PlayerState::try_deserialize(&mut &data[..])?;
+
+        player_state.current_bet = 0;
+        player_state.has_acted_this_street = false;
+        // Don't change status (keep folded/all-in)
+
+        player_state.try_serialize(&mut &mut data[8..])?;
+    }
+    Ok(())
+}
+
+// Helper to reset player states for new hand
+fn reset_player_states_for_hand<'info>(
+    player_state_accounts: &[AccountInfo<'info>],
+) -> Result<()> {
+    for account_info in player_state_accounts {
+        let mut data = account_info.try_borrow_mut_data()?;
+        let mut player_state = PlayerState::try_deserialize(&mut &data[..])?;
+
+        player_state.current_bet = 0;
+        player_state.has_acted_this_street = false;
+        player_state.status = PlayerStatus::Active;
+
+        player_state.try_serialize(&mut &mut data[8..])?;
+    }
+    Ok(())
+}
 
 #[program]
 pub mod poker {
@@ -41,6 +167,9 @@ pub mod poker {
         table.deck_computation = Pubkey::default();
         table.community_cards = [0; 5];
         table.street_bet_count = 0;
+        table.blinds_posted = 0;
+        table.last_raise_amount = 0;
+        table.last_aggressor_index = 0;
 
         msg!("Poker table {} initialized by {}", table_id, ctx.accounts.creator.key());
         Ok(())
@@ -129,12 +258,20 @@ pub mod poker {
             PokerError::GameInProgress
         );
 
+        // Reset all player states for new hand if remaining_accounts provided
+        if !ctx.remaining_accounts.is_empty() {
+            reset_player_states_for_hand(ctx.remaining_accounts)?;
+        }
+
         table.hand_number += 1;
         table.game_state = GameState::PreFlop;
         table.pot = 0;
         table.current_bet = table.big_blind;
         table.street_bet_count = 0;
         table.community_cards = [0; 5];
+        table.blinds_posted = 0;
+        table.last_raise_amount = 0;
+        table.last_aggressor_index = 0;
 
         // Find next button position (skip empty seats)
         let mut next_button = (table.button_position + 1) % MAX_PLAYERS as u8;
@@ -169,6 +306,13 @@ pub mod poker {
         );
 
         let player_position = player_state.position;
+
+        // Check if player already posted blind this hand using bitmask
+        require!(
+            (table.blinds_posted & (1u16 << player_position)) == 0,
+            PokerError::AlreadyPostedBlind
+        );
+
         let small_blind_pos = {
             let mut sb = (table.button_position + 1) % MAX_PLAYERS as u8;
             while table.players[sb as usize] == Pubkey::default() {
@@ -200,6 +344,12 @@ pub mod poker {
         player_state.stack -= blind_amount;
         player_state.current_bet = blind_amount;
         table.pot += blind_amount;
+
+        // Mark player as having posted blind using bitmask
+        table.blinds_posted |= 1u16 << player_position;
+
+        // Mark player as having acted this street
+        player_state.has_acted_this_street = true;
 
         msg!("Player posted {} blind", blind_amount);
         Ok(())
@@ -256,8 +406,15 @@ pub mod poker {
                     player_state.stack >= amount_to_add,
                     PokerError::InsufficientFunds
                 );
+
+                // Minimum raise validation: must be at least the big blind OR the last raise amount
+                let min_raise = if table.last_raise_amount > 0 {
+                    table.last_raise_amount
+                } else {
+                    table.big_blind
+                };
                 require!(
-                    raise_amount >= table.big_blind,
+                    raise_amount >= min_raise,
                     PokerError::RaiseTooSmall
                 );
 
@@ -267,17 +424,32 @@ pub mod poker {
                 table.pot += amount_to_add;
                 table.street_bet_count += 1;
 
+                // Track this raise for future min-raise validation
+                table.last_raise_amount = raise_amount;
+                table.last_aggressor_index = player_state.position;
+
                 msg!("Player raised to {}", total_bet);
             }
         }
 
         player_state.has_acted_this_street = true;
 
-        // Move to next active player
-        let mut next_player = (table.current_player_index + 1) % MAX_PLAYERS as u8;
-        while table.players[next_player as usize] == Pubkey::default() {
-            next_player = (next_player + 1) % MAX_PLAYERS as u8;
-        }
+        // Move to next active player using helper function
+        // If remaining_accounts is empty, fall back to simple next-seat logic
+        let next_player = if ctx.remaining_accounts.is_empty() {
+            let mut next = (table.current_player_index + 1) % MAX_PLAYERS as u8;
+            while table.players[next as usize] == Pubkey::default() {
+                next = (next + 1) % MAX_PLAYERS as u8;
+            }
+            next
+        } else {
+            find_next_active_player(
+                &table.key(),
+                &table,
+                table.current_player_index,
+                ctx.remaining_accounts,
+            )?
+        };
         table.current_player_index = next_player;
 
         Ok(())
@@ -306,6 +478,113 @@ pub mod poker {
         table.current_player_index = first_to_act;
 
         msg!("Advanced to {:?}", table.game_state);
+        Ok(())
+    }
+
+    pub fn advance_street_auto(ctx: Context<AdvanceStreetAuto>) -> Result<()> {
+        let table = &mut ctx.accounts.table;
+
+        // Validate betting round is complete using remaining_accounts
+        require!(
+            !ctx.remaining_accounts.is_empty(),
+            PokerError::BettingRoundNotComplete
+        );
+
+        let round_complete = is_betting_round_complete(&table, ctx.remaining_accounts)?;
+        require!(
+            round_complete,
+            PokerError::BettingRoundNotComplete
+        );
+
+        // Reset all player states for new street
+        reset_player_states_for_street(ctx.remaining_accounts)?;
+
+        // Advance to next street
+        table.game_state = match table.game_state {
+            GameState::PreFlop => GameState::Flop,
+            GameState::Flop => GameState::Turn,
+            GameState::Turn => GameState::River,
+            GameState::River => GameState::Showdown,
+            _ => return Err(PokerError::WrongGameState.into()),
+        };
+
+        // Reset betting for new street
+        table.current_bet = 0;
+        table.street_bet_count = 0;
+        table.last_raise_amount = 0;
+
+        // Find first active player to act after button
+        let first_to_act = if ctx.remaining_accounts.is_empty() {
+            let mut next = (table.button_position + 1) % MAX_PLAYERS as u8;
+            while table.players[next as usize] == Pubkey::default() {
+                next = (next + 1) % MAX_PLAYERS as u8;
+            }
+            next
+        } else {
+            find_next_active_player(
+                &table.key(),
+                &table,
+                table.button_position,
+                ctx.remaining_accounts,
+            )?
+        };
+        table.current_player_index = first_to_act;
+
+        msg!("Advanced to {:?} with validation", table.game_state);
+        Ok(())
+    }
+
+    pub fn check_auto_win(ctx: Context<CheckAutoWin>) -> Result<()> {
+        let table = &mut ctx.accounts.table;
+
+        require!(
+            !ctx.remaining_accounts.is_empty(),
+            PokerError::NoActivePlayersRemaining
+        );
+
+        // Count active players (not folded, not all-in)
+        let mut active_count = 0;
+        let mut last_active_position = 0u8;
+
+        for account_info in ctx.remaining_accounts {
+            let data = account_info.try_borrow_data()?;
+            let player_state = PlayerState::try_deserialize(&mut &data[..])?;
+
+            if player_state.status == PlayerStatus::Active {
+                active_count += 1;
+                last_active_position = player_state.position;
+            }
+        }
+
+        // If only one active player remains, they win automatically
+        if active_count == 1 {
+            // Find the winner's account in remaining_accounts
+            for account_info in ctx.remaining_accounts {
+                let mut data = account_info.try_borrow_mut_data()?;
+                let mut player_state = PlayerState::try_deserialize(&mut &data[..])?;
+
+                if player_state.position == last_active_position {
+                    // Award pot to winner
+                    player_state.stack += table.pot;
+                    player_state.try_serialize(&mut &mut data[8..])?;
+
+                    table.pot = 0;
+                    table.game_state = GameState::HandComplete;
+
+                    emit!(HandComplete {
+                        table: table.key(),
+                        winner: player_state.player,
+                        pot: table.pot,
+                    });
+
+                    msg!("Auto-win: Player at position {} wins by default", last_active_position);
+                    return Ok(());
+                }
+            }
+        }
+
+        // If multiple active players, do nothing (hand continues)
+        msg!("No auto-win: {} active players remaining", active_count);
         Ok(())
     }
 
@@ -419,6 +698,18 @@ pub struct AdvanceStreet<'info> {
 }
 
 #[derive(Accounts)]
+pub struct AdvanceStreetAuto<'info> {
+    #[account(mut)]
+    pub table: Account<'info, PokerTable>,
+}
+
+#[derive(Accounts)]
+pub struct CheckAutoWin<'info> {
+    #[account(mut)]
+    pub table: Account<'info, PokerTable>,
+}
+
+#[derive(Accounts)]
 pub struct EndHand<'info> {
     #[account(mut)]
     pub table: Account<'info, PokerTable>,
@@ -452,6 +743,9 @@ pub struct PokerTable {
     pub deck_computation: Pubkey,  // TODO: Is this how we interact with the API??
     pub community_cards: [u8; 5],  // TODO: Again, is this how we interact with the API??
     pub street_bet_count: u8,      // Number of raises this street
+    pub blinds_posted: u16,        // Bitmask: bit N = player at position N posted blind
+    pub last_raise_amount: u64,    // Size of last raise for min-raise validation
+    pub last_aggressor_index: u8,  // Position of last player who raised
 }
 
 #[account]
@@ -561,4 +855,10 @@ pub enum PokerError {
     RaiseTooSmall,
     #[msg("Invalid winner")]
     InvalidWinner,
+    #[msg("No active players remaining")]
+    NoActivePlayersRemaining,
+    #[msg("Player has already posted blind this hand")]
+    AlreadyPostedBlind,
+    #[msg("Betting round is not complete")]
+    BettingRoundNotComplete,
 }

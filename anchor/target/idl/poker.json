@@ -28,6 +28,46 @@
       "args": []
     },
     {
+      "name": "advance_street_auto",
+      "discriminator": [
+        225,
+        118,
+        69,
+        186,
+        174,
+        191,
+        105,
+        148
+      ],
+      "accounts": [
+        {
+          "name": "table",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "check_auto_win",
+      "discriminator": [
+        183,
+        160,
+        255,
+        22,
+        154,
+        24,
+        185,
+        184
+      ],
+      "accounts": [
+        {
+          "name": "table",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "end_hand",
       "discriminator": [
         252,
@@ -576,6 +616,21 @@
       "code": 6015,
       "name": "InvalidWinner",
       "msg": "Invalid winner"
+    },
+    {
+      "code": 6016,
+      "name": "NoActivePlayersRemaining",
+      "msg": "No active players remaining"
+    },
+    {
+      "code": 6017,
+      "name": "AlreadyPostedBlind",
+      "msg": "Player has already posted blind this hand"
+    },
+    {
+      "code": 6018,
+      "name": "BettingRoundNotComplete",
+      "msg": "Betting round is not complete"
     }
   ],
   "types": [
@@ -855,6 +910,18 @@
           },
           {
             "name": "street_bet_count",
+            "type": "u8"
+          },
+          {
+            "name": "blinds_posted",
+            "type": "u16"
+          },
+          {
+            "name": "last_raise_amount",
+            "type": "u64"
+          },
+          {
+            "name": "last_aggressor_index",
             "type": "u8"
           }
         ]

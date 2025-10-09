@@ -1,5 +1,5 @@
-import { DashboardFeature } from '@/components/dashboard/dashboard-feature'
+import { redirect } from 'next/navigation'
 
 export default function Home() {
-  return <DashboardFeature />
+  redirect('/poker')
 }
