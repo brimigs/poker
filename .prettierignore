@@ -1,6 +1,4 @@
 # Add files here to ignore them from prettier formatting
-/anchor/src/client/js/generated
-/anchor/.anchor
 /anchor/target/debug
 /anchor/target/deploy
 /anchor/target/release

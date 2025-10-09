@@ -2,12 +2,10 @@
 
 This is a Next.js app containing:
 
-- Tailwind and Shadcn UI for styling
-- [Gill](https://gill.site/) Solana SDK
-- Shadcn [Wallet UI](https://registry.wallet-ui.dev) components
+- Tailwind CSS setup for styling
+- Useful wallet UI elements setup using [@solana/web3.js](https://www.npmjs.com/package/@solana/web3.js)
 - A basic Counter Solana program written in Anchor
-- [codama](https://github.com/codama-idl/codama) to generate a JS sdk for the program
-- UI components for interacting with the program
+- UI components for interacting with the Counter program
 
 ## Getting Started
 
@@ -16,13 +14,13 @@ This is a Next.js app containing:
 #### Download the template
 
 ```shell
-npx create-solana-dapp@latest -t gh:solana-foundation/templates/gill/poker
+pnpm create solana-dapp@latest -t gh:solana-foundation/templates/web3js/poker
 ```
 
 #### Install Dependencies
 
 ```shell
-npm install
+pnpm install
 ```
 
 ## Apps
@@ -34,40 +32,41 @@ This is a Solana program written in Rust using the Anchor framework.
 #### Commands
 
 You can use any normal anchor commands. Either move to the `anchor` directory and run the `anchor` command or prefix the
-command with `npm`, eg: `npm run anchor`.
+command with `pnpm`, eg: `pnpm anchor`.
 
 #### Sync the program id:
 
 Running this command will create a new keypair in the `anchor/target/deploy` directory and save the address to the
-Anchor config file and update the `declare_id!` macro in the `./src/lib.rs` file of the program. This will also update
-the constant in the `anchor/src/counter-exports.ts` file.
+Anchor config file and update the `declare_id!` macro in the `./src/lib.rs` file of the program.
+
+You will manually need to update the constant in `anchor/lib/counter-exports.ts` to match the new program id.
 
 ```shell
-npm run setup
+pnpm anchor keys sync
 ```
 
 #### Build the program:
 
 ```shell
-npm run anchor-build
+pnpm anchor-build
 ```
 
 #### Start the test validator with the program deployed:
 
 ```shell
-npm run anchor-localnet
+pnpm anchor-localnet
 ```
 
 #### Run the tests
 
 ```shell
-npm run anchor-test
+pnpm anchor-test
 ```
 
 #### Deploy to Devnet
 
 ```shell
-npm run anchor deploy --provider.cluster devnet
+pnpm anchor deploy --provider.cluster devnet
 ```
 
 ### web
@@ -76,14 +75,14 @@ This is a React app that uses the Anchor generated client to interact with the S
 
 #### Commands
 
-Start the app
+Start the web app
 
 ```shell
-npm run dev
+pnpm dev
 ```
 
-Build the app
+Build the web app
 
 ```shell
-npm run build
+pnpm build
 ```

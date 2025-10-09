@@ -1,7 +1,5 @@
-'use client'
-import { redirect } from 'next/navigation'
-import AccountFeatureIndex from '@/features/account/account-feature-index'
+import AccountListFeature from '@/components/account/account-list-feature'
 
 export default function Page() {
-  return <AccountFeatureIndex redirect={redirect} />
+  return <AccountListFeature />
 }

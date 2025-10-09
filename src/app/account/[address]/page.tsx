@@ -1,6 +1,5 @@
-'use client'
-import AccountFeatureDetail from '@/features/account/account-feature-detail'
+import AccountDetailFeature from '@/components/account/account-detail-feature'
 
 export default function Page() {
-  return <AccountFeatureDetail />
+  return <AccountDetailFeature />
 }
